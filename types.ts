@@ -9,7 +9,8 @@ export enum BrushStyle {
   SOLID = 'solid',
   MARKER = 'marker',
   CRAYON = 'crayon',
-  SPRAY = 'spray'
+  SPRAY = 'spray',
+  SPARKLE = 'sparkle'
 }
 
 export type ArtStyle = {

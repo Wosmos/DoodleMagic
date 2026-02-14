@@ -20,9 +20,14 @@ export interface CanvasRef {
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, brushStyle, zoom, traceUrl, showTrace, onImageChange }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const lastPos = useRef({ x: 0, y: 0 });
+
+  // Fixed internal dimensions ensure no quality or coordinates are lost during mode changes
+  const CANVAS_WIDTH = 1400;
+  const CANVAS_HEIGHT = 1400;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,9 +35,17 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
     
+    // Fill with white initially
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     saveToHistory();
+
+    const observer = new ResizeObserver(() => {
+      // Logic to handle window resize if necessary, 
+      // but internal canvas coordinates are fixed.
+    });
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const saveToHistory = () => {
@@ -54,14 +67,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
       const ctx = canvas?.getContext('2d');
       if (ctx && canvas) {
         ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         saveToHistory();
       }
     },
     undo: () => {
       if (history.length <= 1) return;
       const newHistory = [...history];
-      newHistory.pop(); // Remove current
+      newHistory.pop();
       const lastState = newHistory[newHistory.length - 1];
       
       const canvas = canvasRef.current;
@@ -70,7 +83,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
         const img = new Image();
         img.src = lastState;
         img.onload = () => {
-          ctx.clearRect(0, 0, canvas!.width, canvas!.height);
+          ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
           ctx.drawImage(img, 0, 0);
           setHistory(newHistory);
           if (onImageChange) onImageChange(lastState);
@@ -83,16 +96,32 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
     
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // Important: Scale coordinates based on the ratio of fixed internal pixels to displayed CSS pixels
+    const scaleX = CANVAS_WIDTH / rect.width;
+    const scaleY = CANVAS_HEIGHT / rect.height;
 
     return {
       x: (clientX - rect.left) * scaleX,
       y: (clientY - rect.top) * scaleY
     };
+  };
+
+  const drawStar = (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.translate(x, y);
+    ctx.moveTo(0, 0 - radius);
+    for (let i = 0; i < 5; i++) {
+      ctx.rotate(Math.PI / 5);
+      ctx.lineTo(0, 0 - (radius * 0.5));
+      ctx.rotate(Math.PI / 5);
+      ctx.lineTo(0, 0 - radius);
+    }
+    ctx.fill();
+    ctx.restore();
   };
 
   const setupCtx = (ctx: CanvasRenderingContext2D) => {
@@ -104,10 +133,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     ctx.shadowBlur = 0;
 
     if (tool === Tool.ERASER) {
-      ctx.globalCompositeOperation = 'destination-out'; // True erasure
-      // For simplicity in AI logic, we often want white background
-      // but destination-out is better for drawing feel. 
-      // We'll stick to 'source-over' with white color for simpler AI transformation compatibility.
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = 'white';
       return;
@@ -123,9 +148,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
         ctx.shadowBlur = 1;
         ctx.shadowColor = color;
         break;
-      case BrushStyle.SPRAY:
-        // Spray handled in draw logic
-        break;
       default:
         ctx.globalAlpha = 1.0;
     }
@@ -133,7 +155,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     if (tool === Tool.PAN) return;
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     setIsDrawing(true);
     const pos = getPos(e);
     lastPos.current = pos;
@@ -152,15 +174,19 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     if (ctx) {
       if (brushStyle === BrushStyle.SPRAY && tool !== Tool.ERASER) {
         for (let i = 0; i < 20; i++) {
-          const offsetX = (Math.random() - 0.5) * brushSize * 2;
-          const offsetY = (Math.random() - 0.5) * brushSize * 2;
+          const offsetX = (Math.random() - 0.5) * brushSize * 2.5;
+          const offsetY = (Math.random() - 0.5) * brushSize * 2.5;
           ctx.fillStyle = color;
           ctx.fillRect(pos.x + offsetX, pos.y + offsetY, 1, 1);
+        }
+      } else if (brushStyle === BrushStyle.SPARKLE && tool !== Tool.ERASER) {
+        ctx.fillStyle = color;
+        if (Math.random() > 0.7) {
+          drawStar(ctx, pos.x + (Math.random()-0.5)*brushSize, pos.y + (Math.random()-0.5)*brushSize, Math.random() * (brushSize / 2));
         }
       } else if (brushStyle === BrushStyle.CRAYON && tool !== Tool.ERASER) {
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
-        // Add some noise for crayon feel
         ctx.save();
         ctx.globalAlpha = 0.1;
         ctx.lineWidth = brushSize / 2;
@@ -182,28 +208,34 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   };
 
   return (
-    <div className="relative w-full aspect-square max-w-[700px] studio-shadow bg-white rounded-xl overflow-hidden border border-slate-200">
-      {traceUrl && showTrace && (
-        <img 
-          src={traceUrl} 
-          className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none z-0 grayscale contrast-150"
-          alt="Tracing guide"
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      <div className="relative w-full h-full max-w-full max-h-full aspect-square studio-shadow bg-white rounded-xl md:rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center transition-all duration-500">
+        {traceUrl && showTrace && (
+          <img 
+            src={traceUrl} 
+            className="absolute inset-0 w-full h-full object-contain opacity-15 pointer-events-none z-0 grayscale contrast-150"
+            alt="Tracing guide"
+          />
+        )}
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          className={`relative z-10 w-full h-full touch-none ${tool === Tool.PAN ? 'cursor-grab' : 'cursor-crosshair'}`}
+          style={{ 
+            transform: `scale(${zoom})`, 
+            transformOrigin: 'center',
+            imageRendering: 'auto'
+          }}
         />
-      )}
-      <canvas
-        ref={canvasRef}
-        width={1400}
-        height={1400}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-        className={`relative z-10 w-full h-full touch-none ${tool === Tool.PAN ? 'cursor-grab' : 'cursor-crosshair'}`}
-        style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
-      />
+      </div>
     </div>
   );
 });
