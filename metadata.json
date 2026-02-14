@@ -1,0 +1,7 @@
+{
+  "name": "DoodleMagic",
+  "description": "A kid-friendly AI coloring and doodle app that encourages art education by transforming simple sketches into polished illustrations using Gemini 2.5 Flash Image.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
