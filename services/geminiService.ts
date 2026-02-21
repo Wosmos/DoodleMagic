@@ -30,6 +30,32 @@ export const transformDrawing = async (base64Image: string, prompt: string, styl
   return part ? `data:image/png;base64,${part.inlineData.data}` : null;
 };
 
+export const enhanceDrawing = async (base64Image: string) => {
+  const ai = getAI();
+  const imageData = base64Image.split(',')[1];
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-image',
+    contents: {
+      parts: [
+        { inlineData: { data: imageData, mimeType: 'image/png' } },
+        { text: `You are a professional illustrator. A child has provided this rough sketch.
+        Your job is to ENHANCE this sketch into a cleaner, better version of the EXACT SAME DRAWING.
+        
+        CRITICAL INSTRUCTIONS:
+        1. Keep it as a 2D drawing/illustration. DO NOT turn it into 3D or real life.
+        2. Fix the wobbly lines, improve the proportions, and add neat, professional coloring and shading.
+        3. Preserve the exact composition, characters, and intent of the original sketch.
+        4. The output must look like a high-quality digital illustration of the original sketch.` }
+      ]
+    },
+    config: { imageConfig: { aspectRatio: "1:1" } }
+  });
+
+  const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+  return part ? `data:image/png;base64,${part.inlineData.data}` : null;
+};
+
 export const guessWhatIAmDrawing = async (base64Image: string) => {
   const ai = getAI();
   const imageData = base64Image.split(',')[1];

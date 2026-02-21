@@ -4,69 +4,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>DoodleMagic Pro — Artist Studio</title>
+  <title>DoodleMagic — Clay Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --studio-bg: #f8fafc;
-      --canvas-border: #e2e8f0;
-      --accent-primary: #6366f1;
+      --clay-bg: #E8EEF5;
+      --clay-white: #ffffff;
+      --clay-shadow: rgba(160, 175, 195, 0.6);
+      --clay-highlight: rgba(255, 255, 255, 0.9);
+      --clay-accent: #7C3AED;
     }
+
     body {
-      font-family: 'Outfit', sans-serif;
-      background-color: var(--studio-bg);
+      font-family: 'Fredoka', sans-serif;
+      background-color: var(--clay-bg);
       overflow: hidden;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
-      touch-action: none; /* Prevent browser pull-to-refresh */
+      touch-action: none;
     }
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+
+    /* Claymorphism Core */
+    .clay-surface {
+      background: #E8EEF5;
+      box-shadow: 12px 12px 24px var(--clay-shadow), 
+                  -8px -8px 16px var(--clay-highlight);
+      border: 1px solid rgba(255, 255, 255, 0.4);
     }
-    .studio-shadow {
-      box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+
+    .clay-card {
+      background: #F0F4F8;
+      border-radius: 2.5rem;
+      box-shadow: 20px 20px 40px var(--clay-shadow), 
+                  -10px -10px 20px var(--clay-highlight);
+      border: 1px solid rgba(255, 255, 255, 0.6);
     }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    .clay-btn {
+      background: #F0F4F8;
+      border-radius: 1.5rem;
+      box-shadow: 6px 6px 12px var(--clay-shadow), 
+                  -4px -4px 8px var(--clay-highlight),
+                  inset 2px 2px 4px rgba(255,255,255,0.4);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: none;
+      position: relative;
+    }
     
+    .clay-btn:active {
+      box-shadow: inset 6px 6px 12px var(--clay-shadow), 
+                  inset -4px -4px 8px var(--clay-highlight);
+      transform: scale(0.94);
+    }
+
+    .clay-btn-active {
+      background: var(--clay-accent);
+      color: white;
+      box-shadow: inset 4px 4px 8px rgba(0,0,0,0.2), 
+                  inset -4px -4px 8px rgba(255,255,255,0.2);
+    }
+
+    .clay-inset {
+      background: #E4EBF2;
+      box-shadow: inset 8px 8px 16px var(--clay-shadow), 
+                  inset -6px -6px 12px var(--clay-highlight);
+      border-radius: 2rem;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-4deg); }
+      75% { transform: rotate(4deg); }
+    }
+    .hover-wobble:hover { animation: wobble 0.5s ease-in-out infinite; }
+
+    /* Layout Utils */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .canvas-container {
-      perspective: 1000px;
-    }
-    .canvas-wrapper {
-      transform-origin: center center;
-      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 1; }
-      100% { transform: scale(1.5); opacity: 0; }
-    }
-    .magic-pulse {
-      position: relative;
-    }
-    .magic-pulse::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border: 2px solid #818cf8;
-      border-radius: inherit;
-      animation: pulse-ring 2s infinite;
+    .canvas-frame {
+      padding: 1.25rem;
+      background: #E8EEF5;
+      border-radius: 3rem;
+      box-shadow: 30px 30px 60px var(--clay-shadow), 
+                  -20px -20px 40px var(--clay-highlight);
     }
     
-    /* Ensure scroll trays feel physical on mobile */
-    .snap-x {
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-    }
-    .snap-center {
-      scroll-snap-align: center;
+    @media (max-width: 768px) {
+      .canvas-frame { padding: 0.75rem; border-radius: 2rem; }
+      .clay-card { border-radius: 2rem; }
     }
   </style>
   <script type="importmap">
@@ -80,8 +114,10 @@
     }
   }
   </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

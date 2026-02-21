@@ -16,6 +16,7 @@ interface CanvasProps {
 export interface CanvasRef {
   clear: () => void;
   undo: () => void;
+  loadImage: (url: string) => void;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, brushStyle, zoom, traceUrl, showTrace, onImageChange }, ref) => {
@@ -24,6 +25,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const lastPos = useRef({ x: 0, y: 0 });
+  const hueRef = useRef(0); // For rainbow effect
 
   // Fixed internal dimensions ensure no quality or coordinates are lost during mode changes
   const CANVAS_WIDTH = 1400;
@@ -89,6 +91,21 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
           if (onImageChange) onImageChange(lastState);
         };
       }
+    },
+    loadImage: (url: string) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (ctx && canvas) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        img.onload = () => {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          saveToHistory();
+        };
+      }
     }
   }));
 
@@ -128,8 +145,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = tool === Tool.ERASER ? 'white' : color;
-    ctx.globalAlpha = 1.0;
     ctx.shadowBlur = 0;
 
     if (tool === Tool.ERASER) {
@@ -140,6 +155,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
 
     ctx.globalCompositeOperation = 'source-over';
     
+    if (brushStyle === BrushStyle.RAINBOW) {
+       ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
+       ctx.shadowBlur = 2;
+       ctx.shadowColor = `hsl(${hueRef.current}, 100%, 50%)`;
+    } else {
+       ctx.strokeStyle = color;
+    }
+
     switch (brushStyle) {
       case BrushStyle.MARKER:
         ctx.globalAlpha = 0.4;
@@ -184,6 +207,19 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
         if (Math.random() > 0.7) {
           drawStar(ctx, pos.x + (Math.random()-0.5)*brushSize, pos.y + (Math.random()-0.5)*brushSize, Math.random() * (brushSize / 2));
         }
+      } else if (brushStyle === BrushStyle.RAINBOW && tool !== Tool.ERASER) {
+         // Cycle Hue
+         hueRef.current = (hueRef.current + 5) % 360;
+         ctx.beginPath();
+         ctx.moveTo(lastPos.current.x, lastPos.current.y);
+         ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
+         ctx.shadowColor = `hsl(${hueRef.current}, 100%, 50%)`;
+         ctx.shadowBlur = 5;
+         ctx.lineWidth = brushSize;
+         ctx.lineCap = 'round';
+         ctx.lineJoin = 'round';
+         ctx.lineTo(pos.x, pos.y);
+         ctx.stroke();
       } else if (brushStyle === BrushStyle.CRAYON && tool !== Tool.ERASER) {
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();

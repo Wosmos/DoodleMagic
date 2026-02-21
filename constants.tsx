@@ -7,7 +7,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: '3D Toy',
     description: 'Shiny plastic toy style',
     emoji: '🧸',
-    promptSuffix: 'into a high-end 3D character model or toy. Use vibrant colors, soft sub-surface scattering, studio lighting, and smooth plastic textures. The result should look like a professional character render from a modern animation film.'
+    promptSuffix: 'into a high-end 3D character model or toy. Use vibrant colors, soft sub-surface scattering, studio lighting, and smooth plastic textures. The result should look like a professional character render from a modern Pixar or Disney animation film.'
   },
   {
     id: 'watercolor',
@@ -21,7 +21,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: 'Oil Paint',
     description: 'Rich and thick textures',
     emoji: '🖼️',
-    promptSuffix: 'into a classic fine art oil painting. Use heavy impasto brushstrokes, visible paint texture, rich color depth, and dramatic chiaroscuro lighting. It should look like a museum-quality canvas painting.'
+    promptSuffix: 'into a classic fine art oil painting. Use heavy impasto brushstrokes, visible paint texture, rich color depth, and dramatic chiaroscuro lighting. It should look like a museum-quality canvas painting by a master artist.'
   },
   {
     id: 'pencil',
@@ -36,6 +36,41 @@ export const ART_STYLES: ArtStyle[] = [
     description: 'Magical anime style',
     emoji: '🌸',
     promptSuffix: 'into a magical, cinematic anime scene inspired by Studio Ghibli. Use lush backgrounds, soft sun-drenched lighting, hand-painted aesthetic, and a sense of nostalgic wonder. The final image must be a polished, clean animation frame.'
+  },
+  {
+    id: 'pixel_art',
+    name: 'Pixel Art',
+    description: 'Retro 16-bit game style',
+    emoji: '👾',
+    promptSuffix: 'into a highly detailed 16-bit pixel art illustration. Use a restricted vibrant color palette, crisp pixel-perfect edges, and classic retro video game shading techniques. It should look like a screenshot from a premium indie game.'
+  },
+  {
+    id: 'claymation',
+    name: 'Claymation',
+    description: 'Stop-motion clay art',
+    emoji: '🏺',
+    promptSuffix: 'into a realistic stop-motion claymation scene. Use visible fingerprint textures on the clay, miniature set lighting, and a slightly imperfect, hand-sculpted look. It should resemble an Aardman Animations movie.'
+  },
+  {
+    id: 'neon_cyberpunk',
+    name: 'Neon Glow',
+    description: 'Bright glowing lines',
+    emoji: '⚡',
+    promptSuffix: 'into a futuristic cyberpunk neon artwork. Use a dark background with intensely glowing neon lights in vibrant pinks, blues, and purples. Add subtle light reflections and a high-tech, energetic atmosphere.'
+  },
+  {
+    id: 'origami',
+    name: 'Origami',
+    description: 'Folded paper craft',
+    emoji: '🦢',
+    promptSuffix: 'into a beautiful origami paper craft sculpture. Use crisp folded paper textures, sharp geometric creases, and soft studio lighting that highlights the dimensional layers of the colored paper.'
+  },
+  {
+    id: 'pop_art',
+    name: 'Pop Art',
+    description: 'Comic book style',
+    emoji: '💥',
+    promptSuffix: 'into a bold, retro Pop Art illustration. Use thick black comic book outlines, vibrant flat colors, and Ben-Day halftone dots for shading. It should look like a classic 1960s comic book panel or a Roy Lichtenstein painting.'
   }
 ];
 

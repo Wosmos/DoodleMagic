@@ -1,6 +1,7 @@
 
 import React from 'react';
 import * as Lucide from 'lucide-react';
+import { playSquish, playSuccess } from '../services/soundService';
 
 interface MagicModalProps {
   original: string;
@@ -8,98 +9,111 @@ interface MagicModalProps {
   feedback: string;
   loading: boolean;
   onClose: () => void;
+  onSave?: (url: string) => void;
 }
 
-const MagicModal: React.FC<MagicModalProps> = ({ original, result, feedback, loading, onClose }) => {
+const MagicModal: React.FC<MagicModalProps> = ({ original, result, feedback, loading, onClose, onSave }) => {
   const handleDownload = () => {
     if (!result) return;
+    playSuccess();
     const link = document.createElement('a');
     link.href = result;
-    link.download = `doodlemagic-masterpiece-${Date.now()}.png`;
+    link.download = `my-dream-art-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const handleSaveToFridge = () => {
+    if (result && onSave) {
+      onSave(result);
+      onClose(); // Close after saving
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-indigo-900/60 p-2 md:p-4 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl md:squircle w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-full max-h-[95vh] md:h-auto overflow-y-auto hide-scrollbar">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-indigo-900/40 p-2 md:p-8 backdrop-blur-2xl animate-in fade-in duration-500">
+      <div className="clay-card w-full max-w-6xl overflow-hidden flex flex-col lg:flex-row h-full lg:h-auto animate-in zoom-in-95 duration-500 bg-[#F0F4F8]">
         
-        {/* Gallery Section */}
-        <div className="flex-1 bg-slate-50 p-4 md:p-10 flex flex-col gap-4 md:gap-6 justify-center">
-          <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
-            <div className="flex-1 space-y-2 md:space-y-3">
-              <span className="inline-block px-3 py-0.5 md:px-4 md:py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] md:text-sm font-bold uppercase tracking-wider">Your Sketch</span>
-              <img src={original} className="w-full aspect-square object-contain rounded-xl md:rounded-2xl border-2 md:border-4 border-white shadow-lg" alt="Kid drawing" />
+        {/* Creative Showcase */}
+        <div className="flex-1 p-6 md:p-14 flex flex-col gap-6 md:gap-10 justify-center items-center overflow-y-auto hide-scrollbar">
+          <div className="flex flex-col sm:flex-row gap-6 md:gap-10 w-full">
+            <div className="flex-1 space-y-3">
+              <span className="clay-btn px-4 py-1 text-[10px] font-black uppercase text-blue-500 tracking-widest inline-block bg-white">Your Sketch</span>
+              <div className="canvas-frame">
+                <img src={original} className="w-full aspect-square object-contain rounded-2xl bg-white shadow-inner" alt="Sketch" />
+              </div>
             </div>
             
-            <div className="flex-1 space-y-2 md:space-y-3">
-              <span className="inline-block px-3 py-0.5 md:px-4 md:py-1 bg-purple-100 text-purple-600 rounded-full text-[10px] md:text-sm font-bold uppercase tracking-wider">Magic Masterpiece</span>
-              <div className="relative group w-full aspect-square bg-white rounded-xl md:rounded-2xl border-2 md:border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+            <div className="flex-1 space-y-3">
+              <span className="clay-btn px-4 py-1 text-[10px] font-black uppercase text-purple-600 tracking-widest inline-block bg-white">Masterpiece</span>
+              <div className="relative group w-full aspect-square canvas-frame flex items-center justify-center">
                 {loading ? (
-                  <div className="text-center p-4 md:p-6">
-                    <div className="w-10 h-10 md:w-16 md:h-16 border-4 md:border-8 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-purple-600 font-bold text-sm md:text-lg animate-pulse">Brewing Magic Art...</p>
+                  <div className="text-center p-6">
+                    <div className="text-5xl md:text-7xl animate-bounce mb-4">🔮</div>
+                    <p className="text-indigo-600 font-black text-sm md:text-xl animate-pulse">Brewing Magic...</p>
                   </div>
                 ) : result ? (
                   <>
-                    <img src={result} className="w-full h-full object-cover animate-in zoom-in fade-in duration-700" alt="AI Magic" />
-                    {/* Floating Quick Download Overlay */}
-                    <button 
-                      onClick={handleDownload}
-                      className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md text-indigo-600 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 hover:bg-white hover:scale-110 active:scale-95"
-                      title="Quick Save"
-                    >
-                      <Lucide.Download size={20} />
+                    <img src={result} className="w-full h-full object-cover rounded-2xl animate-in zoom-in fade-in duration-1000" alt="Masterpiece" />
+                    <button onClick={handleDownload} className="absolute top-4 right-4 clay-btn p-3 text-purple-600 opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-90 bg-white">
+                      <Lucide.Download size={24} />
                     </button>
                   </>
                 ) : (
-                  <p className="text-gray-400 text-xs text-center p-4">Oh no! The magic fizzled. Let's try again!</p>
+                  <p className="text-slate-400 font-bold">Magic Fizzled! Try again!</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 border-slate-100 shadow-sm flex items-center gap-3 md:gap-6">
-             <div className="text-3xl md:text-6xl animate-bounce">🐻</div>
+          <div className="clay-card w-full max-w-2xl bg-white p-6 md:p-8 flex items-center gap-4 md:gap-8 border-l-8 border-purple-500">
+             <div className="text-4xl md:text-7xl animate-float shrink-0">🐻</div>
              <div className="flex-1">
-               <h4 className="text-indigo-900 font-bold text-sm md:text-xl mb-0.5 md:mb-1 uppercase tracking-tighter">Doodle Bear Teacher</h4>
-               <p className="text-slate-600 text-xs md:text-lg leading-tight italic">
-                 {loading ? "Checking my spell book... hang on!" : feedback}
+               <h4 className="text-indigo-900 font-black text-lg md:text-2xl mb-1 uppercase tracking-tighter">Bear Mentor</h4>
+               <p className="text-slate-600 text-xs md:text-lg leading-relaxed italic font-medium">
+                 {loading ? "Checking my enchanted scroll... almost there!" : feedback}
                </p>
              </div>
           </div>
         </div>
 
-        {/* Action Sidebar */}
-        <div className="shrink-0 w-full md:w-72 bg-indigo-600 p-6 md:p-8 flex flex-col justify-center items-center text-center gap-6">
+        {/* Action Gallery Sidebar */}
+        <div className="shrink-0 w-full lg:w-80 bg-gradient-to-br from-indigo-600 to-purple-700 p-6 md:p-10 flex flex-col justify-center items-center text-center gap-6 md:gap-10">
           <div className="space-y-2 md:space-y-4">
-             <div className="text-3xl md:text-5xl">🏆</div>
-             <h3 className="text-white text-lg md:text-2xl font-bold">Great Job!</h3>
-             <p className="text-indigo-100 text-[10px] md:text-sm">This is a beautiful piece of art. Would you like to save it to your gallery?</p>
+             <div className="text-4xl md:text-6xl animate-bounce">🏆</div>
+             <h3 className="text-white text-xl md:text-3xl font-black">Fantastic!</h3>
+             <p className="text-purple-100 text-[10px] md:text-sm font-medium">This is truly one of a kind! Ready to show the world?</p>
           </div>
           
-          <div className="w-full space-y-3">
+          <div className="w-full space-y-3 md:space-y-4">
+            <button
+              onClick={handleSaveToFridge}
+              disabled={!result || loading}
+              className={`w-full py-4 md:py-6 clay-btn bg-white text-indigo-600 font-black text-sm md:text-lg flex items-center justify-center gap-3 transition-all ${(!result || loading) ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}
+            >
+              <span className="text-xl">❄️</span>
+              Stick on Fridge
+            </button>
+
             <button
               onClick={handleDownload}
               disabled={!result || loading}
-              className={`w-full py-4 bg-white text-indigo-600 rounded-xl md:squircle font-bold text-base md:text-lg shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${(!result || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-50'}`}
+              className={`w-full py-3 md:py-4 clay-btn bg-purple-500 text-white font-black text-sm flex items-center justify-center gap-2 transition-all ${(!result || loading) ? 'opacity-50' : 'hover:scale-105'}`}
             >
-              <Lucide.Download size={20} />
+              <Lucide.Download size={18} />
               Save to Device
             </button>
 
             <button
-              onClick={onClose}
-              className="w-full py-4 bg-yellow-400 text-indigo-900 rounded-xl md:squircle font-bold text-base md:text-lg shadow-lg hover:bg-yellow-300 transition-all active:scale-95"
+              onClick={() => { playSquish(); onClose(); }}
+              className="w-full py-4 md:py-6 clay-btn bg-yellow-400 text-yellow-900 font-black text-sm md:text-lg hover:bg-yellow-300 hover:scale-105"
             >
-              Keep Drawing
+              Back to Studio
             </button>
           </div>
 
-          <p className="text-indigo-300 text-[10px] md:text-xs font-medium italic opacity-60">
-            "Every doodle is a step closer to being a master!"
-          </p>
+          <p className="text-purple-200 text-[8px] md:text-xs font-bold italic opacity-60">"Every brushstroke is a new discovery!"</p>
         </div>
       </div>
     </div>

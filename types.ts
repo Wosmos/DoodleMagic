@@ -10,7 +10,8 @@ export enum BrushStyle {
   MARKER = 'marker',
   CRAYON = 'crayon',
   SPRAY = 'spray',
-  SPARKLE = 'sparkle'
+  SPARKLE = 'sparkle',
+  RAINBOW = 'rainbow'
 }
 
 export type ArtStyle = {
@@ -33,4 +34,11 @@ export interface CanvasState {
   zoom: number;
   offsetX: number;
   offsetY: number;
+}
+
+export interface GalleryItem {
+  id: string;
+  url: string;
+  date: number;
+  prompt: string;
 }
