@@ -1,4 +1,3 @@
-
 import React from 'react';
 import * as Lucide from 'lucide-react';
 import { GalleryItem } from '../types';
@@ -11,53 +10,77 @@ interface FridgeModalProps {
 
 const FridgeModal: React.FC<FridgeModalProps> = ({ items, onClose, onDelete }) => {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-indigo-900/40 p-2 md:p-8 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="clay-card w-full max-w-5xl h-[90vh] flex flex-col bg-[#F0F4F8] relative overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-2 md:p-8 backdrop-blur-sm">
+      {/* Main Container: Sharp corners, thick border, massive shadow */}
+      <div className="w-full max-w-6xl h-[90vh] flex flex-col bg-[#c0c0c0] border-4 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)] relative overflow-hidden font-mono">
         
-        {/* Header */}
-        <div className="shrink-0 p-6 md:p-8 flex items-center justify-between bg-white/50 border-b border-white">
-          <div className="flex items-center gap-4">
-            <span className="text-4xl md:text-5xl animate-bounce">❄️</span>
+        {/* BRUTALIST HEADER (Windows 95 style title bar) */}
+        <div className="shrink-0 p-4 flex items-center justify-between bg-black text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💾</span>
             <div>
-              <h2 className="text-2xl md:text-4xl font-black text-slate-800">The Fridge</h2>
-              <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest">My Art Gallery</p>
+              <h2 className="text-lg md:text-2xl font-black uppercase tracking-tighter italic">Directory://Archive/The_Fridge</h2>
+              <p className="text-[10px] font-bold text-[#00FFFF] uppercase tracking-[0.2em]">Local_Storage_Access_Granted</p>
             </div>
           </div>
-          <button onClick={onClose} className="clay-btn p-3 md:p-4 text-slate-500 hover:text-red-500">
-            <Lucide.X size={24} />
+          <button 
+            onClick={onClose} 
+            className="bg-red-500 border-2 border-white p-2 hover:bg-white hover:text-red-500 transition-colors shadow-[2px_2px_0px_white]"
+          >
+            <Lucide.X size={20} strokeWidth={3} />
           </button>
         </div>
 
         {/* Gallery Grid */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#808080]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '30px 30px' }}>
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-50 gap-4">
-              <Lucide.Image size={64} className="text-slate-300" />
-              <p className="text-xl font-bold text-slate-400">The fridge is empty!</p>
-              <p className="text-sm font-medium text-slate-400">Go make some magic art first.</p>
+            <div className="h-full flex flex-col items-center justify-center text-center p-10 border-4 border-dashed border-black bg-white/50">
+              <Lucide.FolderOpen size={64} className="mb-4" />
+              <p className="text-2xl font-black uppercase italic">404: NO_ART_FOUND</p>
+              <p className="text-xs font-bold uppercase mt-2">The database is currently empty. Initialize drawing sequence.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {items.map((item) => (
-                <div key={item.id} className="clay-card p-4 group relative flex flex-col gap-3 transition-transform hover:scale-[1.02]">
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-white shadow-inner relative">
-                    <img src={item.url} alt="Art" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </div>
-                  <div className="flex items-center justify-between px-2">
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-purple-500 tracking-wider">
-                        {new Date(item.date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm font-bold text-slate-700 truncate max-w-[150px]">{item.prompt}</p>
+                <div 
+                  key={item.id} 
+                  className="bg-white border-4 border-black p-2 shadow-[8px_8px_0px_black] group hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_black] transition-all"
+                >
+                  {/* Image Container */}
+                  <div className="aspect-square border-2 border-black overflow-hidden bg-black relative">
+                    <img src={item.url} alt="Art" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300" />
+                    
+                    {/* Hover Info Tag */}
+                    <div className="absolute top-2 left-2 bg-yellow-400 border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">
+                      FILE_{item.id.slice(-4)}
                     </div>
-                    <div className="flex gap-2">
-                      <a href={item.url} download={`fridge-art-${item.id}.png`} className="clay-btn p-2 text-indigo-500 hover:scale-110" title="Download">
-                        <Lucide.Download size={16} />
-                      </a>
-                      <button onClick={() => onDelete(item.id)} className="clay-btn p-2 text-red-400 hover:text-red-600 hover:scale-110" title="Remove">
-                        <Lucide.Trash2 size={16} />
-                      </button>
+                  </div>
+
+                  {/* Metadata Section */}
+                  <div className="mt-3 flex flex-col gap-2">
+                    <div className="bg-black text-white px-2 py-1">
+                      <p className="text-[10px] font-bold uppercase truncate italic">{item.prompt}</p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold uppercase text-black/60">
+                        {new Date(item.date).toLocaleDateString()}
+                      </span>
+                      <div className="flex gap-1">
+                        <a 
+                          href={item.url} 
+                          download={`art-${item.id}.png`} 
+                          className="p-2 border-2 border-black bg-[#00FFFF] hover:bg-black hover:text-white transition-colors"
+                        >
+                          <Lucide.Download size={14} />
+                        </a>
+                        <button 
+                          onClick={() => onDelete(item.id)} 
+                          className="p-2 border-2 border-black bg-[#FF00FF] text-white hover:bg-red-600 transition-colors"
+                        >
+                          <Lucide.Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -66,9 +89,15 @@ const FridgeModal: React.FC<FridgeModalProps> = ({ items, onClose, onDelete }) =
           )}
         </div>
 
-        {/* Footer */}
-        <div className="shrink-0 p-4 bg-white/30 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-          Art is saved in your browser
+        {/* BRUTALIST FOOTER */}
+        <div className="shrink-0 p-3 bg-white border-t-4 border-black flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+          <div className="flex items-center gap-4">
+            <span>Items: {items.length}</span>
+            <span className="hidden md:inline">Storage: Browser_Local</span>
+          </div>
+          <div className="text-red-600 animate-pulse">
+            System_Live
+          </div>
         </div>
       </div>
     </div>

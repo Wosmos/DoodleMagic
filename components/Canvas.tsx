@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { Tool, BrushStyle } from '../types';
 
@@ -16,7 +15,9 @@ interface CanvasProps {
 export interface CanvasRef {
   clear: () => void;
   undo: () => void;
+  redo: () => void;
   loadImage: (url: string) => void;
+  resetView: () => void;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, brushStyle, zoom, traceUrl, showTrace, onImageChange }, ref) => {
@@ -24,10 +25,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [redoHistory, setRedoHistory] = useState<string[]>([]);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const lastPanPos = useRef({ x: 0, y: 0 });
   const lastPos = useRef({ x: 0, y: 0 });
-  const hueRef = useRef(0); // For rainbow effect
+  const hueRef = useRef(0);
 
-  // Fixed internal dimensions ensure no quality or coordinates are lost during mode changes
   const CANVAS_WIDTH = 1400;
   const CANVAS_HEIGHT = 1400;
 
@@ -37,15 +41,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
     
-    // Fill with white initially
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     saveToHistory();
 
-    const observer = new ResizeObserver(() => {
-      // Logic to handle window resize if necessary, 
-      // but internal canvas coordinates are fixed.
-    });
+    const observer = new ResizeObserver(() => {});
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
@@ -59,6 +59,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
         if (next.length > 30) next.shift();
         return next;
       });
+      setRedoHistory([]);
       if (onImageChange) onImageChange(data);
     }
   };
@@ -76,7 +77,10 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     undo: () => {
       if (history.length <= 1) return;
       const newHistory = [...history];
-      newHistory.pop();
+      const popped = newHistory.pop();
+      if (popped) {
+        setRedoHistory(prev => [...prev, popped]);
+      }
       const lastState = newHistory[newHistory.length - 1];
       
       const canvas = canvasRef.current;
@@ -89,6 +93,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
           ctx.drawImage(img, 0, 0);
           setHistory(newHistory);
           if (onImageChange) onImageChange(lastState);
+        };
+      }
+    },
+    redo: () => {
+      if (redoHistory.length === 0) return;
+      const newRedo = [...redoHistory];
+      const stateToRestore = newRedo.pop();
+      
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (ctx && stateToRestore) {
+        const img = new Image();
+        img.src = stateToRestore;
+        img.onload = () => {
+          ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          ctx.drawImage(img, 0, 0);
+          setHistory(prev => [...prev, stateToRestore]);
+          setRedoHistory(newRedo);
+          if (onImageChange) onImageChange(stateToRestore);
         };
       }
     },
@@ -106,6 +129,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
           saveToHistory();
         };
       }
+    },
+    resetView: () => {
+      setPan({ x: 0, y: 0 });
     }
   }));
 
@@ -116,7 +142,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
     
-    // Important: Scale coordinates based on the ratio of fixed internal pixels to displayed CSS pixels
     const scaleX = CANVAS_WIDTH / rect.width;
     const scaleY = CANVAS_HEIGHT / rect.height;
 
@@ -157,8 +182,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
     
     if (brushStyle === BrushStyle.RAINBOW) {
        ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
-       ctx.shadowBlur = 2;
-       ctx.shadowColor = `hsl(${hueRef.current}, 100%, 50%)`;
     } else {
        ctx.strokeStyle = color;
     }
@@ -177,8 +200,16 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   };
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-    if (tool === Tool.PAN) return;
     if (e.cancelable) e.preventDefault();
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    if (tool === Tool.PAN) {
+      isPanning.current = true;
+      lastPanPos.current = { x: clientX, y: clientY };
+      return;
+    }
+
     setIsDrawing(true);
     const pos = getPos(e);
     lastPos.current = pos;
@@ -191,6 +222,17 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    if (tool === Tool.PAN && isPanning.current) {
+      const dx = clientX - lastPanPos.current.x;
+      const dy = clientY - lastPanPos.current.y;
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      lastPanPos.current = { x: clientX, y: clientY };
+      return;
+    }
+
     if (!isDrawing || tool === Tool.PAN) return;
     const pos = getPos(e);
     const ctx = canvasRef.current?.getContext('2d');
@@ -208,26 +250,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
           drawStar(ctx, pos.x + (Math.random()-0.5)*brushSize, pos.y + (Math.random()-0.5)*brushSize, Math.random() * (brushSize / 2));
         }
       } else if (brushStyle === BrushStyle.RAINBOW && tool !== Tool.ERASER) {
-         // Cycle Hue
-         hueRef.current = (hueRef.current + 5) % 360;
-         ctx.beginPath();
-         ctx.moveTo(lastPos.current.x, lastPos.current.y);
-         ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
-         ctx.shadowColor = `hsl(${hueRef.current}, 100%, 50%)`;
-         ctx.shadowBlur = 5;
-         ctx.lineWidth = brushSize;
-         ctx.lineCap = 'round';
-         ctx.lineJoin = 'round';
-         ctx.lineTo(pos.x, pos.y);
-         ctx.stroke();
-      } else if (brushStyle === BrushStyle.CRAYON && tool !== Tool.ERASER) {
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        ctx.save();
-        ctx.globalAlpha = 0.1;
-        ctx.lineWidth = brushSize / 2;
-        ctx.stroke();
-        ctx.restore();
+          hueRef.current = (hueRef.current + 5) % 360;
+          ctx.beginPath();
+          ctx.moveTo(lastPos.current.x, lastPos.current.y);
+          ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
+          ctx.lineWidth = brushSize;
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
       } else {
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
@@ -237,6 +266,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   };
 
   const stopDrawing = () => {
+    if (isPanning.current) {
+      isPanning.current = false;
+    }
     if (isDrawing) {
       setIsDrawing(false);
       saveToHistory();
@@ -244,15 +276,31 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      <div className="relative w-full h-full max-w-full max-h-full aspect-square studio-shadow bg-white rounded-xl md:rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center transition-all duration-500">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden bg-[#808080] p-1 md:p-4">
+      {/* NEO-BRUTALIST CANVAS WRAPPER 
+          - Thick 4px black borders
+          - Harsh 8px solid shadow
+          - Blueprint background pattern
+      */}
+      <div 
+        className="relative w-full h-full aspect-square bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center transition-transform duration-300"
+        style={{ 
+          backgroundImage: `linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px)`,
+          backgroundSize: '20px 20px'
+        }}
+      >
         {traceUrl && showTrace && (
           <img 
             src={traceUrl} 
-            className="absolute inset-0 w-full h-full object-contain opacity-15 pointer-events-none z-0 grayscale contrast-150"
+            className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none z-0 filter contrast-125"
             alt="Tracing guide"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: 'center'
+            }}
           />
         )}
+        
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
@@ -264,13 +312,20 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ color, brushSize, tool, bru
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className={`relative z-10 w-full h-full touch-none ${tool === Tool.PAN ? 'cursor-grab' : 'cursor-crosshair'}`}
+          /* Harsh cursors: 'crosshair' for drawing, 'all-scroll' for moving */
+          className={`relative z-10 w-full h-full touch-none ${tool === Tool.PAN ? 'cursor-all-scroll' : 'cursor-crosshair'}`}
           style={{ 
-            transform: `scale(${zoom})`, 
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, 
             transformOrigin: 'center',
-            imageRendering: 'auto'
+            imageRendering: 'pixelated' /* Optional: for that raw digital look */
           }}
         />
+
+        {/* BRUTALIST UI DECORATION: Corner Marks */}
+        <div className="absolute top-0 left-0 w-4 h-4 border-l-4 border-t-4 border-black pointer-events-none" />
+        <div className="absolute top-0 right-0 w-4 h-4 border-r-4 border-t-4 border-black pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-l-4 border-bottom-4 border-black pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-r-4 border-bottom-4 border-black pointer-events-none" />
       </div>
     </div>
   );

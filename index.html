@@ -1,106 +1,132 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>DoodleMagic — Clay Studio</title>
+  <title>DoodleMagic — Brutal Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  
   <style>
     :root {
-      --clay-bg: #E8EEF5;
-      --clay-white: #ffffff;
-      --clay-shadow: rgba(160, 175, 195, 0.6);
-      --clay-highlight: rgba(255, 255, 255, 0.9);
-      --clay-accent: #7C3AED;
+      /* Brutalist Color Palette: High contrast, stark, unpolished */
+      --brutal-bg: #c0c0c0; /* Classic Windows 95 Grey */
+      --brutal-white: #ffffff;
+      --brutal-black: #000000;
+      --brutal-accent: #FF00FF; /* Stark Magenta */
+      --brutal-secondary: #00FFFF; /* Stark Cyan */
+      --brutal-yellow: #FFFF00;
     }
 
     body {
-      font-family: 'Fredoka', sans-serif;
-      background-color: var(--clay-bg);
+      font-family: 'Space Mono', monospace;
+      background-color: var(--brutal-bg);
+      color: var(--brutal-black);
       overflow: hidden;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       touch-action: none;
+      /* Add a raw, grid-like pattern to the background */
+      background-image: linear-gradient(var(--brutal-black) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--brutal-black) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: -1px -1px;
     }
 
-    /* Claymorphism Core */
+    /* NOTE: Keeping the "clay-" class names so your React app doesn't break, 
+      but completely rewriting their behavior to be Brutalist.
+    */
+
     .clay-surface {
-      background: #E8EEF5;
-      box-shadow: 12px 12px 24px var(--clay-shadow), 
-                  -8px -8px 16px var(--clay-highlight);
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: var(--brutal-white);
+      border: 4px solid var(--brutal-black);
+      box-shadow: 8px 8px 0px var(--brutal-black);
+      border-radius: 0;
     }
 
     .clay-card {
-      background: #F0F4F8;
-      border-radius: 2.5rem;
-      box-shadow: 20px 20px 40px var(--clay-shadow), 
-                  -10px -10px 20px var(--clay-highlight);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      background: var(--brutal-white);
+      border: 4px solid var(--brutal-black);
+      box-shadow: 12px 12px 0px var(--brutal-black);
+      border-radius: 0;
     }
 
     .clay-btn {
-      background: #F0F4F8;
-      border-radius: 1.5rem;
-      box-shadow: 6px 6px 12px var(--clay-shadow), 
-                  -4px -4px 8px var(--clay-highlight),
-                  inset 2px 2px 4px rgba(255,255,255,0.4);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      border: none;
+      background: var(--brutal-white);
+      border: 3px solid var(--brutal-black);
+      border-radius: 0;
+      box-shadow: 6px 6px 0px var(--brutal-black);
+      transition: transform 0.05s linear, box-shadow 0.05s linear, background-color 0.1s;
+      text-transform: uppercase;
+      font-weight: bold;
       position: relative;
     }
     
-    .clay-btn:active {
-      box-shadow: inset 6px 6px 12px var(--clay-shadow), 
-                  inset -4px -4px 8px var(--clay-highlight);
-      transform: scale(0.94);
+    .clay-btn:hover {
+      background: var(--brutal-yellow);
     }
 
+    /* Harsh, mechanical click effect (translates down to "crush" the shadow) */
+    .clay-btn:active {
+      transform: translate(6px, 6px) !important;
+      box-shadow: 0px 0px 0px var(--brutal-black) !important;
+      background: var(--brutal-secondary);
+    }
+
+    /* Active states invert colors or go high-contrast */
     .clay-btn-active {
-      background: var(--clay-accent);
-      color: white;
-      box-shadow: inset 4px 4px 8px rgba(0,0,0,0.2), 
-                  inset -4px -4px 8px rgba(255,255,255,0.2);
+      background: var(--brutal-black) !important;
+      color: var(--brutal-white) !important;
+      box-shadow: 6px 6px 0px var(--brutal-accent) !important;
     }
 
     .clay-inset {
-      background: #E4EBF2;
-      box-shadow: inset 8px 8px 16px var(--clay-shadow), 
-                  inset -6px -6px 12px var(--clay-highlight);
-      border-radius: 2rem;
+      background: var(--brutal-bg);
+      border: 3px solid var(--brutal-black);
+      border-radius: 0;
+      /* Hard inner shadow */
+      box-shadow: inset 4px 4px 0px rgba(0,0,0,0.2); 
     }
 
-    /* Animations */
+    /* Animations - Brutalism favors jerky, mechanical movements over smooth easing */
     @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-4px, -4px); }
     }
-    .animate-float { animation: float 3s ease-in-out infinite; }
+    /* steps() makes it choppy like a retro gif */
+    .animate-float { animation: float 0.8s steps(2, end) infinite; }
 
     @keyframes wobble {
       0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-4deg); }
-      75% { transform: rotate(4deg); }
+      25% { transform: rotate(-5deg); background: var(--brutal-secondary); }
+      75% { transform: rotate(5deg); background: var(--brutal-accent); }
     }
-    .hover-wobble:hover { animation: wobble 0.5s ease-in-out infinite; }
+    .hover-wobble:hover { animation: wobble 0.2s steps(2, end) infinite; }
 
     /* Layout Utils */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     .canvas-frame {
-      padding: 1.25rem;
-      background: #E8EEF5;
-      border-radius: 3rem;
-      box-shadow: 30px 30px 60px var(--clay-shadow), 
-                  -20px -20px 40px var(--clay-highlight);
+      padding: 1rem;
+      background: var(--brutal-white);
+      border: 6px solid var(--brutal-black);
+      box-shadow: 16px 16px 0px var(--brutal-black);
+      border-radius: 0;
     }
     
     @media (max-width: 768px) {
-      .canvas-frame { padding: 0.75rem; border-radius: 2rem; }
-      .clay-card { border-radius: 2rem; }
+      .canvas-frame { 
+        padding: 0.5rem; 
+        border: 4px solid var(--brutal-black);
+        box-shadow: 8px 8px 0px var(--brutal-black);
+      }
+      .clay-card { 
+        box-shadow: 8px 8px 0px var(--brutal-black); 
+      }
     }
   </style>
   <script type="importmap">
